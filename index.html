@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        .canvas-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            padding: 10px;
+            width: 100vw;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas id="pawnCanvas"></canvas>
+        <canvas id="knightCanvas"></canvas>
+        <canvas id="rookCanvas"></canvas>
+        <canvas id="bishopCanvas"></canvas>
+        <canvas id="queenCanvas"></canvas>
+        <canvas id="kingCanvas"></canvas>
+        <canvas id="beePawnCanvas"></canvas>
+        <canvas id="rainbowCanvas"></canvas>
+        <canvas id="poisonPawnCanvas"></canvas>
+        <canvas id="zombiePawnCanvas"></canvas>
+    </div>
+
+    <!-- Include the gl-matrix library for matrix operations -->
+    <script src="matrix.js"></script>
+
+    <!-- Include your JavaScript file -->
+    <script src="index.js"></script>
+    <script src="pawn_model.js"></script>
+    <script src="knight_model.js"></script>
+    <script src="rook_model.js"></script>
+    <script src="bishop_model.js"></script>
+    <script src="queen_model.js"></script>
+    <script src="king_model.js"></script>
+    <script src="bee_pawn_model.js"></script>
+    <script src="rainbow_model.js"></script>
+    <script src="poison_pawn_model.js"></script>
+    <script src="zombie_pawn_model.js"></script>
+    <script>
+        window.onload = function() {
+            const width = 16;
+            const height = 32;
+            const depth = 16;
+
+            const models = [
+                { name: 'pawn', func: getPawnModel },
+                { name: 'knight', func: getKnightModel },
+                { name: 'rook', func: getRookModel },
+                { name: 'bishop', func: getBishopModel },
+                { name: 'queen', func: getQueenModel },
+                { name: 'king', func: getKingModel },
+                { name: 'beePawn', func: getBeePawnModel }, // Add this line
+                { name: 'rainbow', func: getRainbowModel },
+                { name: 'poisonPawn', func: getPoisonPawnModel },
+                { name: 'zombiePawn', func: getZombiePawnModel }
+            ];
+
+            models.forEach(model => {
+                const canvas = document.getElementById(`${model.name}Canvas`);
+                const rgbaArray = new Uint8Array(width * height * depth * 4);
+                model.func(width, height, depth, rgbaArray);
+
+                let angleY = 0;
+                let angleX = 0;
+                let zoom = 0.7;
+
+                let isDragging = false;
+                let previousMousePosition = { x: 0, y: 0 };
+
+                function updateAndPaint() {
+                    paintModel(canvas, width, height, depth, rgbaArray, angleY, angleX, zoom);
+                }
+
+                // Ensure the canvas is properly sized before the initial paint
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+
+                // Initial paint
+                updateAndPaint();
+
+                canvas.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                });
+
+                canvas.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    angleY += deltaX * 0.01;
+                    angleX += deltaY * 0.01;
+
+                    // Clamp angleX to prevent flipping
+                    angleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, angleX));
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+
+                    updateAndPaint();
+                });
+
+                canvas.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                canvas.addEventListener('mouseleave', () => {
+                    isDragging = false;
+                });
+
+                // Add zoom functionality
+                canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const zoomSpeed = 0.1;
+                    zoom += e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+                    zoom = Math.max(0.1, Math.min(15, zoom)); // Limit zoom range
+                    updateAndPaint();
+                });
+            });
+        };
+    </script>
+</body>
+</html>
